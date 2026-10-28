@@ -1,33 +1,22 @@
-import mongoose from "mongoose";
+import dotenv from "dotenv";
+import app from "./app.js";
+import connectDB from "./config/db.config.js";
 
-const userSchema = new mongoose.Schema(
-    {
-        username: {
-            type: String,
-            required: [true, "Username is required"],
-            trim: true,
-        },
+dotenv.config();
 
-        email: {
-            type: String,
-            required: [true, "Email is required"],
-            unique: true,
-            lowercase: true,
-            trim: true,
-        },
+const PORT = process.env.PORT || 5000;
 
-        password: {
-            type: String,
-            required: [true, "Password is required"],
-            minlength: [8, "Password must be at least 8 characters"],
-            select: false,
-        },
-    },
-    {
-        timestamps: true,
+const startServer = async () => {
+    try {
+        await connectDB();
+
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error("Failed to start server:", error.message);
+        process.exit(1);
     }
-);
+};
 
-const User = mongoose.model("User", userSchema);
-
-export default User;
+startServer();
