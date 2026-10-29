@@ -1,4 +1,4 @@
-import {registerServices, loginServices} from './../services'
+import { registerServices, loginServices } from "./../services/auth.services";
 
 export const registerController = async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -62,3 +62,14 @@ export const loginController = async (req, res, next) => {
     }
 };
 
+export const logoutController = (req, res) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax"
+    });
+
+    return res.status(200).json({
+        message: "Logout successful."
+    });
+};
