@@ -5,3 +5,11 @@ export const createAccountServices = async (accountOwnerId) => {
 
     return account;
 }
+
+export const getAllAccountsServices = async (accountOwnerId) => {
+    const accounts = await accountModel.find({
+        accountOwner: accountOwnerId
+    });
+
+    return accounts;
+};
