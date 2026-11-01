@@ -1,8 +1,11 @@
 import express from 'express';
+import {authMiddleware} from './../middlewares/auth.middlewares';
+import {accountMiddleware} from './../middlewares/account.middlewares'
 
 const transactionRoute = express.Router();
 
 //deposit
+transactionRoute.post('/deposit', authMiddleware, accountMiddleware, depositController);
 
 //withdrawal
 
