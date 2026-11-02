@@ -1,4 +1,5 @@
-import transactionModel from './../models/transaction.models.js';
+import mongoose from "mongoose";
+import transactionModel from "./../models/transaction.models.js";
 
 export const depositServices = async (
     toAccountId,
@@ -7,16 +8,36 @@ export const depositServices = async (
     idempotencyKey,
     toAccount
 ) => {
-    const deposit = await transactionModel.create({
-        toAccount: toAccountId,
-        type,
-        amount,
-        idempotencyKey
-    });
+    const session = await mongoose.startSession();
 
-    toAccount.balance += amount;
+    try {
+        session.startTransaction();
 
-    await toAccount.save();
+        const [deposit] = await transactionModel.create(
+            [{
+                toAccount: toAccountId,
+                type,
+                amount,
+                idempotencyKey
+            }],
+            { session }
+        );
 
-    return deposit;
+        toAccount.balance += amount;
+        await toAccount.save({ session });
+
+        deposit.status = "COMPLETED";
+        await deposit.save({ session });
+
+        await session.commitTransaction();
+
+        return deposit;
+
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+
+    } finally {
+        await session.endSession();
+    }
 };
