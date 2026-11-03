@@ -1,56 +1,42 @@
-import transactionModel from './../models/transaction.models.js';
-import { depositServices } from './../services/transaction.services.js';
+import { depositServices, withdrawalServices } from "../services/transaction.services.js";
 
 export const depositController = async (req, res, next) => {
     try {
-        const { toAccount, type, amount, idempotencyKey } = req.body;
+        const { amount, idempotencyKey } = req.body;
+        const accountId = req.account._id;
 
-        if (!toAccount || !type || amount === undefined || !idempotencyKey) {
+        // Validate required fields
+        if (amount === undefined || !idempotencyKey) {
             return res.status(400).json({
-                message: "To Account, type, amount and idempotencyKey are required for deposit."
+                message: "Amount and idempotencyKey are required for deposit."
             });
         }
 
-        if (toAccount.toString() !== req.account._id.toString()) {
-            return res.status(400).json({
-                message: "Invalid To Account."
-            });
-        }
-
+        // Validate account status
         if (req.account.status !== "Active") {
             return res.status(400).json({
                 message: "Amount can't be deposited in an inactive account."
             });
         }
 
-        if (type !== "DEPOSIT") {
-            return res.status(400).json({
-                message: "Invalid transaction type."
-            });
-        }
-
+        // Validate amount
         if (!Number.isFinite(amount) || amount <= 0) {
             return res.status(400).json({
                 message: "Please enter a valid amount."
             });
         }
 
-        const isIdempotencyExists = await transactionModel.findOne({
-            idempotencyKey
-        });
-
-        if (isIdempotencyExists) {
-            return res.status(409).json({
-                message: "Idempotency key already exists."
+        // Validate idempotency key
+        if (typeof idempotencyKey !== "string" || !idempotencyKey.trim()) {
+            return res.status(400).json({
+                message: "Please provide a valid idempotency key."
             });
         }
 
         const deposit = await depositServices(
-            toAccount,
-            type,
+            accountId,
             amount,
-            idempotencyKey, 
-            req.account
+            idempotencyKey
         );
 
         return res.status(201).json({
@@ -59,6 +45,70 @@ export const depositController = async (req, res, next) => {
         });
 
     } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({
+                message: "Idempotency key already exists."
+            });
+        }
+
         next(err);
     }
 };
+
+export const withdrawalController = async (req, res, next) => {
+    try {
+        const { amount, idempotencyKey } = req.body;
+        const accountId = req.account._id;
+
+        // Validate required fields
+        if (amount === undefined || !idempotencyKey) {
+            return res.status(400).json({
+                message: "Amount and idempotencyKey are required for withdrawal."
+            });
+        }
+
+        // Validate account status
+        if (req.account.status !== "Active") {
+            return res.status(400).json({
+                message: "Amount can't be withdrawn from an inactive account."
+            });
+        }
+
+        // Validate amount
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return res.status(400).json({
+                message: "Please enter a valid amount."
+            });
+        }
+
+        // Validate idempotency key
+        if (typeof idempotencyKey !== "string" || !idempotencyKey.trim()) {
+            return res.status(400).json({
+                message: "Please provide a valid idempotency key."
+            });
+        }
+
+        const withdrawal = await withdrawalServices(
+            accountId,
+            amount,
+            idempotencyKey
+        );
+
+        return res.status(201).json({
+            message: "Amount withdrawn successfully.",
+            transaction: withdrawal
+        });
+
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({
+                message: "Idempotency key already exists."
+            });
+        }
+        next(err);
+    }
+};
+
+export const transferController = async (req, res, next) => {
+    
+}

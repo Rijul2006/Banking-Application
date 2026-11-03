@@ -1,15 +1,18 @@
 import express from 'express';
 import {authMiddleware} from './../middlewares/auth.middlewares';
-import {accountMiddleware} from './../middlewares/account.middlewares'
+import {accountMiddleware} from './../middlewares/account.middlewares';
+import { depositController, withdrawalController } from '../controllers/transaction.controllers';
 
 const transactionRoute = express.Router();
 
 //deposit
-transactionRoute.post('/deposit', authMiddleware, accountMiddleware, depositController);
+transactionRoute.post('/deposit/:accountId', authMiddleware, accountMiddleware, depositController);
 
 //withdrawal
+transactionRoute.post('/withdrawal/:accountId', authMiddleware, accountMiddleware, withdrawalController);
 
 //transfer
+transactionRoute.post('/transfer/:accountId', authMiddleware, accountMiddleware, tranferController);
 
 //view transaction history
 
