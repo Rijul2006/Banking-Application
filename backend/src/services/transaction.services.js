@@ -248,14 +248,24 @@ export const viewTransactionHistoryServices = async (accountId, page, limit) => 
         transactionModel.countDocuments(filter)
     ]);
 
+    const totalPages = Math.ceil(totalTransactions / limit);
+
+    if(page > totalPages && totalTransactions > 0){
+        const error = new Error(
+            `Invalid page number. Only ${totalPages} pages are available.`
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+
     return {
         transactions,
         pagination: {
             currentPage: page,
-            totalPages: Math.ceil(totalTransactions / limit),
+            totalPages,
             totalTransactions,
             limit,
-            hasNextPage: page < Math.ceil(totalTransactions / limit),
+            hasNextPage: page < totalPages,
             hasPreviousPage: page > 1
         }
     };
